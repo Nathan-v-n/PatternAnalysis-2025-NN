@@ -19,12 +19,15 @@ import torch
 import torchvision.transforms.functional as TF
 from skimage.transform import resize
 
-
 def load_nii_slices(path):
     img = nib.load(path).get_fdata()
-    # assume shape (H, W, Slices) or (X,Y,Z)
-    if img.ndim == 4:
-        img = img[...,0]
+    img = np.squeeze(img)  # remove singleton dims
+
+    # ensure 3D volume shape (H, W, Slices)
+    if img.ndim == 2:
+        img = img[:, :, np.newaxis]  # single slice
+    elif img.ndim > 3:
+        img = img[..., 0]  # take first volume if 4D
     return img
 
 
@@ -37,35 +40,22 @@ class HipMRISlicesDataset(Dataset):
         self.transform = transform
         self.target_size = target_size
         self.max_slices_per_volume = max_slices_per_volume
-        self.samples = []  # list of (volume_path, slice_idx)
+        self.samples = []
+
         for f in self.files:
-            vol = load_nii_slices(f)
-            n_slices = vol.shape[2]
-            for s in range(min(n_slices, self.max_slices_per_volume)):
-                self.samples.append((f, s))
+            try:
+                vol = load_nii_slices(f)
+                if vol.ndim != 3:
+                    print(f"[WARN] Skipping {f}: unexpected shape {vol.shape}")
+                    continue
+                n_slices = vol.shape[2]
+                for s in range(min(n_slices, self.max_slices_per_volume)):
+                    self.samples.append((f, s))
+            except Exception as e:
+                print(f"[ERROR] Skipping {f}: {e}")
 
-    def __len__(self):
-        return len(self.samples)
-
-    def __getitem__(self, idx):
-        f, s = self.samples[idx]
-        vol = load_nii_slices(f)
-        slice_img = vol[:,:,s]
-        # normalize to 0-1
-        slice_img = slice_img.astype(np.float32)
-        # simple percentile clip
-        p1, p99 = np.percentile(slice_img, (1, 99))
-        slice_img = np.clip(slice_img, p1, p99)
-        slice_img = (slice_img - slice_img.min()) / (slice_img.max() - slice_img.min() + 1e-8)
-        # resize
-        if slice_img.shape != self.target_size:
-            slice_img = resize(slice_img, self.target_size, preserve_range=True, anti_aliasing=True)
-        # add channel
-        slice_img = np.expand_dims(slice_img, 0)
-        tensor = torch.from_numpy(slice_img).float()
-        if self.transform:
-            tensor = self.transform(tensor)
-        return tensor
+        if len(self.samples) == 0:
+            raise RuntimeError(f"No valid slices found in {self.dir}. Please check the data structure.")
 
 
 def make_dataloaders(root, batch_size=16, target_size=(128,128), num_workers=4):
