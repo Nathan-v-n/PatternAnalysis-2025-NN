@@ -34,7 +34,7 @@ def compute_batch_ssim(x, x_recon):
     return float(np.mean(scores))
 
 
-def train(root='HipMRI_Study_open', epochs=50, batch_size=16, lr=2e-4, device='cuda' if torch.cuda.is_available() else 'cpu'):
+def train(root='HipMRI_Study_open/keras_slices_data', epochs=50, batch_size=16, lr=2e-4, device='cuda' if torch.cuda.is_available() else 'cpu'):
     train_loader, val_loader, test_loader = make_dataloaders(root, batch_size=batch_size)
 
     model = VQVAE(in_channels=1, z_channels=64, num_embeddings=512, hidden=128).to(device)
