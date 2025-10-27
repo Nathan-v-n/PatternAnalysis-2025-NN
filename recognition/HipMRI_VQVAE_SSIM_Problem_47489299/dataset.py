@@ -61,9 +61,14 @@ class HipMRISlicesDataset(Dataset):
         # Normalize to [0,1]
         img = (img - np.min(img)) / (np.max(img) - np.min(img) + 1e-5)
 
-        img = torch.tensor(img, dtype=torch.float32).unsqueeze(0)  # add channel dim (C, H, W)
+        # Convert to tensor, add channel dimension
+        img = torch.tensor(img, dtype=torch.float32).unsqueeze(0)  # [1, H, W]
+
+        img = F.interpolate(img.unsqueeze(0), size=self.target_size, mode='bilinear', align_corners=False).squeeze(0)
+
         if self.transform:
             img = self.transform(img)
+
         return img
 
 
