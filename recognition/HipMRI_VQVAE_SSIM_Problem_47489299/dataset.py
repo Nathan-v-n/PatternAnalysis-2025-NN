@@ -32,30 +32,39 @@ def load_nii_slices(path):
 
 
 class HipMRISlicesDataset(Dataset):
-    def __init__(self, root_dir, split='train', transform=None, target_size=(128,128), max_slices_per_volume=9999):
-        self.root = os.path.join(root_dir, 'keras_slices_data')
-        self.split = split
-        self.dir = os.path.join(self.root, f'keras_slices_{split}')
-        self.files = sorted(glob(os.path.join(self.dir, '*.nii.gz')))
+    def __init__(self, root_dir, split='train', transform=None, target_size=(128, 128), max_slices_per_volume=64):
+        self.dir = os.path.join(root_dir, f'keras_slices_{split}')
+        self.files = sorted([os.path.join(self.dir, f) for f in os.listdir(self.dir) if f.endswith('.nii.gz')])
         self.transform = transform
         self.target_size = target_size
         self.max_slices_per_volume = max_slices_per_volume
         self.samples = []
 
+        # Preload metadata
         for f in self.files:
-            try:
-                vol = load_nii_slices(f)
-                if vol.ndim != 3:
-                    print(f"[WARN] Skipping {f}: unexpected shape {vol.shape}")
-                    continue
-                n_slices = vol.shape[2]
-                for s in range(min(n_slices, self.max_slices_per_volume)):
-                    self.samples.append((f, s))
-            except Exception as e:
-                print(f"[ERROR] Skipping {f}: {e}")
+            vol = load_nii_slices(f)
+            n_slices = vol.shape[2]
+            for s in range(min(n_slices, self.max_slices_per_volume)):
+                self.samples.append((f, s))
 
         if len(self.samples) == 0:
             raise RuntimeError(f"No valid slices found in {self.dir}. Please check the data structure.")
+
+    def __len__(self):
+        return len(self.samples) 
+
+    def __getitem__(self, idx):
+        f, s = self.samples[idx]
+        vol = load_nii_slices(f)
+        img = vol[:, :, s]
+
+        # Normalize to [0,1]
+        img = (img - np.min(img)) / (np.max(img) - np.min(img) + 1e-5)
+
+        img = torch.tensor(img, dtype=torch.float32).unsqueeze(0)  # add channel dim (C, H, W)
+        if self.transform:
+            img = self.transform(img)
+        return img
 
 
 def make_dataloaders(root, batch_size=16, target_size=(128,128), num_workers=4):
