@@ -60,7 +60,7 @@ class HipMRISlicesDataset(Dataset):
 
 def make_dataloaders(root, batch_size=16, target_size=(128,128), num_workers=4):
     train_ds = HipMRISlicesDataset(root, split='train', target_size=target_size)
-    val_ds = HipMRISlicesDataset(root, split='validate', target_size=target_size)
+    val_ds = HipMRISlicesDataset(root, split='test', target_size=target_size)
     test_ds = HipMRISlicesDataset(root, split='test', target_size=target_size)
 
     train_loader = DataLoader(train_ds, batch_size=batch_size, shuffle=True, num_workers=num_workers)
