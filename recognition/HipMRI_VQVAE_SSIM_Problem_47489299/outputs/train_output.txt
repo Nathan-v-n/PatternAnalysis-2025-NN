@@ -1,0 +1,72 @@
+ Epoch 1 train: 100%|██████████| 717/717 [00:50<00:00, 14.31it/s]
+Epoch 1: train_loss=1.113281, val_loss=0.071989, val_ssim=0.5669
+Epoch 2 train: 100%|██████████| 717/717 [00:48<00:00, 14.75it/s]
+Epoch 2: train_loss=0.021344, val_loss=0.009631, val_ssim=0.7596
+Epoch 3 train: 100%|██████████| 717/717 [00:48<00:00, 14.70it/s]
+Epoch 3: train_loss=0.008159, val_loss=0.006154, val_ssim=0.8132
+Epoch 4 train: 100%|██████████| 717/717 [00:48<00:00, 14.90it/s]
+Epoch 4: train_loss=0.006058, val_loss=0.005070, val_ssim=0.8425
+Epoch 5 train: 100%|██████████| 717/717 [00:48<00:00, 14.93it/s]
+Epoch 5: train_loss=0.005022, val_loss=0.004334, val_ssim=0.8634
+Epoch 6 train: 100%|██████████| 717/717 [00:48<00:00, 14.84it/s]
+Epoch 6: train_loss=0.004492, val_loss=0.004052, val_ssim=0.8735
+Epoch 7 train: 100%|██████████| 717/717 [00:48<00:00, 14.87it/s]
+Epoch 7: train_loss=0.004263, val_loss=0.003806, val_ssim=0.8858
+Epoch 8 train: 100%|██████████| 717/717 [00:49<00:00, 14.59it/s]
+Epoch 8: train_loss=0.004125, val_loss=0.003742, val_ssim=0.8924
+Epoch 9 train: 100%|██████████| 717/717 [00:48<00:00, 14.83it/s]
+Epoch 9: train_loss=0.004026, val_loss=0.003663, val_ssim=0.8973
+Epoch 10 train: 100%|██████████| 717/717 [00:48<00:00, 14.78it/s]
+Epoch 10: train_loss=0.003995, val_loss=0.003623, val_ssim=0.9007
+Target SSIM reached (0.9007) at epoch 10, saving and stopping.
+*Plots, see checkpoints/training_plots.png*
+Training complete. Best val SSIM: 0.9006545936064004
+(VQVAE(
+   (encoder): Encoder(
+     (conv1): Conv2d(1, 64, kernel_size=(4, 4), stride=(2, 2), padding=(1, 1))
+     (conv2): Conv2d(64, 128, kernel_size=(4, 4), stride=(2, 2), padding=(1, 1))
+     (conv3): Conv2d(128, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+     (relu): ReLU()
+   )
+   (pre_vq_conv): Conv2d(64, 64, kernel_size=(1, 1), stride=(1, 1))
+   (vq): VectorQuantizer(
+     (embedding): Embedding(512, 64)
+   )
+   (decoder): Decoder(
+     (conv1): Conv2d(64, 128, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+     (deconv1): ConvTranspose2d(128, 64, kernel_size=(4, 4), stride=(2, 2), padding=(1, 1))
+     (deconv2): ConvTranspose2d(64, 1, kernel_size=(4, 4), stride=(2, 2), padding=(1, 1))
+     (relu): ReLU()
+     (tanh): Tanh()
+   )
+ ),
+ {'train_loss': [1.1132812284167213,
+   0.021343507772444845,
+   0.008158945053471268,
+   0.006058004759674661,
+   0.00502244706735353,
+   0.004491815512209975,
+   0.00426326300485635,
+   0.004124673306421875,
+   0.004026260060854711,
+   0.00399509022681995],
+  'val_loss': [0.07198928931245098,
+   0.009631131768778518,
+   0.006153892939565358,
+   0.005070222686562273,
+   0.004334334349604669,
+   0.004052375960681174,
+   0.0038057926283390432,
+   0.003741724708083051,
+   0.0036634788744979436,
+   0.0036231037746700975],
+  'val_ssim': [0.5668534445309499,
+   0.7595512114053161,
+   0.8131627093177132,
+   0.842519720773287,
+   0.863375625778845,
+   0.8734614648431527,
+   0.885849782063281,
+   0.892443691640008,
+   0.8972861786279215,
+   0.9006545936064004]})

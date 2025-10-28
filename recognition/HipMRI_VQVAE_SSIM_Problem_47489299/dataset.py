@@ -36,23 +36,10 @@ def load_nii_slices(path):
 class HipMRISlicesDataset(Dataset):
     def __init__(self, root_dir, split='train', transform=None, target_size=(128, 128), max_slices_per_volume=64):
 
-        if split == "train":
-            self.dir = os.path.join(root_dir, "keras_slices_train")
-            self.files = sorted([os.path.join(self.dir, f) for f in os.listdir(self.dir) if f.endswith(".nii.gz")])
-
-        elif split in ["validate", "test"]:
-            test_dir = os.path.join(root_dir, "keras_slices_test")
-            all_files = sorted([os.path.join(test_dir, f) for f in os.listdir(test_dir) if f.endswith(".nii.gz")])
-
-            if len(all_files) == 0:
-                raise RuntimeError(f"No .nii.gz files found in {test_dir}")
-
-            mid = len(all_files) // 2
-            if split == "validate":
-                self.files = all_files[:mid]
-            else:
-                self.files = all_files[mid:]
-            self.dir = test_dir  # for error message consistency
+        self.root = os.path.join(root_dir, 'keras_slices_data')
+        self.split = split
+        self.dir = os.path.join(self.root, f'keras_slices_{split}')
+        self.files = sorted(glob(os.path.join(self.dir, '*.nii.gz')))
         
         self.transform = transform
         self.target_size = target_size
