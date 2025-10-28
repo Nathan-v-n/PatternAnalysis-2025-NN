@@ -12,12 +12,14 @@ proof-of-concept loader but basic hooks are added.
 
 import os
 from glob import glob
-import nibabel as nib
+import nibabel as nib 
 import numpy as np
 from torch.utils.data import Dataset, DataLoader
 import torch
 import torchvision.transforms.functional as TF
 from skimage.transform import resize
+import torch.nn.functional as F
+
 
 def load_nii_slices(path):
     img = nib.load(path).get_fdata()
@@ -33,8 +35,25 @@ def load_nii_slices(path):
 
 class HipMRISlicesDataset(Dataset):
     def __init__(self, root_dir, split='train', transform=None, target_size=(128, 128), max_slices_per_volume=64):
-        self.dir = os.path.join(root_dir, f'keras_slices_{split}')
-        self.files = sorted([os.path.join(self.dir, f) for f in os.listdir(self.dir) if f.endswith('.nii.gz')])
+
+        if split == "train":
+            self.dir = os.path.join(root_dir, "keras_slices_train")
+            self.files = sorted([os.path.join(self.dir, f) for f in os.listdir(self.dir) if f.endswith(".nii.gz")])
+
+        elif split in ["validate", "test"]:
+            test_dir = os.path.join(root_dir, "keras_slices_test")
+            all_files = sorted([os.path.join(test_dir, f) for f in os.listdir(test_dir) if f.endswith(".nii.gz")])
+
+            if len(all_files) == 0:
+                raise RuntimeError(f"No .nii.gz files found in {test_dir}")
+
+            mid = len(all_files) // 2
+            if split == "validate":
+                self.files = all_files[:mid]
+            else:
+                self.files = all_files[mid:]
+            self.dir = test_dir  # for error message consistency
+        
         self.transform = transform
         self.target_size = target_size
         self.max_slices_per_volume = max_slices_per_volume
@@ -64,6 +83,7 @@ class HipMRISlicesDataset(Dataset):
         # Convert to tensor, add channel dimension
         img = torch.tensor(img, dtype=torch.float32).unsqueeze(0)  # [1, H, W]
 
+        # Resize to target size
         img = F.interpolate(img.unsqueeze(0), size=self.target_size, mode='bilinear', align_corners=False).squeeze(0)
 
         if self.transform:

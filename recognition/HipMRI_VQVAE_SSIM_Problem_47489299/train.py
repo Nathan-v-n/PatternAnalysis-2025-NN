@@ -10,8 +10,8 @@ import torch
 from torch import optim
 import torch.nn as nn
 import matplotlib.pyplot as plt
-from tqdm import tqdm
-from skimage.metrics import structural_similarity as ssim
+from tqdm import tqdm 
+from skimage.metrics import structural_similarity as ssim 
 import numpy as np
 
 from modules import VQVAE
@@ -20,7 +20,7 @@ from dataset import make_dataloaders
 
 def compute_batch_ssim(x, x_recon):
     # x and x_recon: torch tensors Bx1xHxW in [0,1]
-    x_np = x.detach().cpu().numpy()
+    x_np =        x.detach().cpu().numpy()
     xr_np = x_recon.detach().cpu().numpy()
     scores = []
     for i in range(x_np.shape[0]):
@@ -35,7 +35,7 @@ def compute_batch_ssim(x, x_recon):
 
 
 def train(root='HipMRI_Study_open/keras_slices_data', epochs=50, batch_size=16, lr=2e-4, device='cuda' if torch.cuda.is_available() else 'cpu'):
-    train_loader, val_loader, test_loader = make_dataloaders(root, batch_size=batch_size)
+    train_loader, val_loader, _ = make_dataloaders(root, batch_size=batch_size)
 
     model = VQVAE(in_channels=1, z_channels=64, num_embeddings=512, hidden=128).to(device)
     optimizer = optim.Adam(model.parameters(), lr=lr)
@@ -96,21 +96,31 @@ def train(root='HipMRI_Study_open/keras_slices_data', epochs=50, batch_size=16, 
     torch.save({'history': history}, os.path.join(save_dir, 'history.pth'))
     torch.save(model.state_dict(), os.path.join(save_dir, 'vqvae_final.pth'))
 
-    # Plot
-    plt.figure(figsize=(10,4))
-    plt.subplot(1,2,1)
-    plt.plot(history['train_loss'], label='train_loss')
-    plt.plot(history['val_loss'], label='val_loss')
-    plt.legend()
-    plt.title('Loss')
+    # Plot training history
+    plt.figure(figsize=(10, 4))
 
-    plt.subplot(1,2,2)
-    plt.plot(history['val_ssim'], label='val_ssim')
+    # --- Plot 1: Loss ---
+    plt.subplot(1, 2, 1)
+    plt.plot(history['train_loss'], label='Training Loss', color='blue')
+    plt.plot(history['val_loss'], label='Validation Loss', color='orange')
+    plt.xlabel('Epoch')
+    plt.ylabel('Reconstruction Loss')
+    plt.title('Training vs Validation Loss')
     plt.legend()
-    plt.title('Validation SSIM')
+    plt.grid(True, linestyle='--', alpha=0.5)
+
+    # --- Plot 2: SSIM ---
+    plt.subplot(1, 2, 2)
+    plt.plot(history['val_ssim'], label='Validation SSIM', color='green')
+    plt.xlabel('Epoch')
+    plt.ylabel('SSIM (Structural Similarity Index)')
+    plt.title('Validation Structural Similarity Over Epochs')
+    plt.legend()
+    plt.grid(True, linestyle='--', alpha=0.5)
+
     plt.tight_layout()
     plt.savefig(os.path.join(save_dir, 'training_plots.png'))
-    plt.close()
+    plt.show()
 
     print('Training complete. Best val SSIM:', best_val_ssim)
     return model, history
