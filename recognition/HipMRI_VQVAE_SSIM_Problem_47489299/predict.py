@@ -14,14 +14,18 @@ import torch
 import matplotlib.pyplot as plt
 import numpy as np
 from skimage.metrics import structural_similarity as ssim 
-from modules import VQVAE
-from dataset import HipMRISlicesDataset
 from torch.utils.data import DataLoader
 import os
 
 
-def show_reconstructions(checkpoint='checkpoints/vqvae_best.pth', root='HipMRI_Study_open', n=6, device='cuda' if torch.cuda.is_available() else 'cpu'):
-    model = VQVAE(in_channels=1, z_channels=64, num_embeddings=512, hidden=128).to(device)
+def show_reconstructions(checkpoint='checkpoints/vqvae_best.pth',
+                        root='HipMRI_Study_open',
+                        n=6,
+                        device='cuda' if torch.cuda.is_available() else 'cpu'):
+    
+    model = VQVAE(in_channels=1, z_channels=64,
+                  num_embeddings=512, hidden=128).to(device)
+    
     state = torch.load(checkpoint, map_location=device)
     if 'model_state' in state:
         model.load_state_dict(state['model_state'])
@@ -29,7 +33,7 @@ def show_reconstructions(checkpoint='checkpoints/vqvae_best.pth', root='HipMRI_S
         model.load_state_dict(state)
     model.eval()
 
-    ds = HipMRISlicesDataset(root, split='test', target_size=(128,128))
+    ds = HipMRISlicesDataset(root, split='test')
     loader = DataLoader(ds, batch_size=n, shuffle=True)
     xb = next(iter(loader)).to(device)
     with torch.no_grad():
@@ -38,6 +42,7 @@ def show_reconstructions(checkpoint='checkpoints/vqvae_best.pth', root='HipMRI_S
     xr_np = xr.cpu().numpy()
 
     os.makedirs("predict_output", exist_ok=True)
+
     for i in range(min(n, xb_np.shape[0])):
         orig = xb_np[i,0]
         recon = xr_np[i,0]

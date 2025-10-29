@@ -88,7 +88,7 @@ def train(root='HipMRI_Study_open', epochs=50, batch_size=16, lr=2e-4, device='c
                        os.path.join(save_dir, 'vqvae_best.pth'))
 
         # early stopping target SSIM reached
-        if val_ssim >= 0.60:
+        if val_ssim >= 0.90:
             print(f'Target SSIM reached ({val_ssim:.4f}) at epoch {epoch}, saving and stopping.')
             break
 
