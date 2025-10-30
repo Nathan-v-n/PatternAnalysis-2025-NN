@@ -21,6 +21,47 @@ This model learns a **discrete latent representation** of MRI structures, a code
 
 ---
 
+## The problem
+
+In this project, we use a VQ-VAE to reconstruct 2D Hip MRI scans as part of a [MRI-alone radiation therapy study](https://data.csiro.au/collection/csiro:51392v2?redirected=true).
+
+The goal was to reconstruct these images this and achieve an SSIM (Structual Similarity Index Measure) above 0.6. After testing, I decided to go with a model that aimed to achieve reconstructions with an SSIM above of 0.9 as the reconstructions at 0.6 were still rather blurry.
+
+#### Why do we reconstruct these scans?
+By training a VQ-VAE to reconstruct these scans, we force the model to learn meaningful latent representations of the anatomy.
+Those representations capture:
+- What typical tissue patterns look like
+- What variations are normal vs. abnormal
+
+Essentially, the model learns what a healthy or typical hip MRI looks like without explicit supervision.\
+
+Once it has learned to accurately reconstruct these MRIs, we can sample from its latent space to generate new, realistic MRI-like images.
+
+- These generated images can then be used as training data for diagnostic models or educational purposes
+- Simulate variations in anatomy or disease presentation dependent on type of data it's trained on (regular or diseased)
+- anonymize patient data by generating structurally realistic but non-identical scans.
+
+In the context of this project title, we would use the generated images to form
+a basis of what is a healthy Hip MRI scan looks like, and use them as a reference point to
+identify prostate cancer in other real scans as part of a diagonistic tool.
+
+This gives us a start to quantitatively identify prostate cancer from Hip MRI's.\
+That being said, the tool that does this should only ever be used by 
+professionals and should never be used as a be all and end all for decisions
+on prostate cancer presence
+
+---
+
+## What is a VQVAE
+A VQ-VAE (Vector Quantized Variational Autoencoder) uses vector quantization to map continuous latent representations into discrete embeddings.
+
+Vector quantization (VQ) is a classical quantization technique from signal processing that allows the modeling of probability density functions
+
+
+Ref: [VQVAE](https://huggingface.co/blog/ariG23498/understand-vq)
+
+---
+
 ## How It Works
 The implemented VQ-VAE follows three main components:
 
@@ -77,11 +118,21 @@ So, each folder is used for its repective purpose in training (`train` and `vali
 ---
 
 ## Results
+Below are six example reconstructions using a model that trained for 10 epochs that achieved an SSIM of 0.9007 durin its training
 
-![Example 0](outputs/predict_output/example_0_SSIM_0.892497.png)
+![Example 0](outputs/predict_output/example_0_SSIM_0.892497.png) ![Example 1](outputs/predict_output/example_1_SSIM_0.911703.png)\
+Reconstructions with SSIM of 0.892 (left) and 0.912 (right)
 
 
-![Example 3](outputs/predict_output/example_3_SSIM_0.895733.png)
+![Example 2](outputs/predict_output/example_2_SSIM_0.900740.png) ![Example 3](outputs/predict_output/example_3_SSIM_0.895733.png)\
+Reconstructions with SSIM of 0.901 (left) and 0.896 (right)
+
+
+
+![Example 4](outputs/predict_output/example_4_SSIM_0.870280.png) ![Example 5](outputs/predict_output/example_5_SSIM_0.903866.png)\
+Reconstructions with SSIM of 0.870 (left) and 0.904 (right)
+
+
 ---
 ## Dependencies
 | Library | Version (tested) | Purpose |
