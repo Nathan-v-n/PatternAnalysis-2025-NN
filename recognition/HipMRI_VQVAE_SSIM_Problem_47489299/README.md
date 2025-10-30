@@ -8,7 +8,7 @@
 [Data Splitting and Justification](#data-splitting-and-justification)\
 [Results](#results)\
 [Dependencies](#dependencies)\
-[How To Run](#how-to-run)
+[Usage](#usage)
 
 ---
 
@@ -37,13 +37,18 @@ After training, the decoder can generate *new* MRI-like samples by sampling from
 ---
 
 ## File Structure
-├── modules.py # Model architecture (Encoder, Decoder, VectorQuantizer, VQVAE)\
-├── dataset.py # Data loader and preprocessing for MRI slices\
-├── train.py # Training, validation, plotting of metrics\
-├── predict.py # Reconstruction and SSIM evaluation\
-├── checkpoints/ # Saved model weights and plots\
-└── README.md # Documentation (this file)\
-
+``` bash
+├── modules.py # Model architecture (Encoder, Decoder, VectorQuantizer, VQVAE)
+├── dataset.py # Data loader and preprocessing for MRI slices
+├── train.py # Training, validation, plotting of metrics
+├── predict.py # Reconstruction and SSIM evaluation
+├── README.md # Documentation (this file)
+└── outputs/
+    ├── train_output.txt # Output of what train.py prints when it runs. Shows epoch training and losses
+    ├── training_plots.png #plots generated during training, showing loss and SSIM scores over epochs
+    └── predict_output/
+        └── ... # Folder with predict.py outputs. example reconstructions
+```
 
 ---
 
@@ -73,6 +78,10 @@ So, each folder is used for its repective purpose in training (`train` and `vali
 
 ## Results
 
+![Example 0](outputs/predict_output/example_0_SSIM_0.892497.png)
+
+
+![Example 3](outputs/predict_output/example_3_SSIM_0.895733.png)
 ---
 ## Dependencies
 | Library | Version (tested) | Purpose |
@@ -85,15 +94,52 @@ So, each folder is used for its repective purpose in training (`train` and `vali
 | `matplotlib` | ≥3.7 | Plotting losses |
 | `tqdm` | ≥4.66 | Progress bars |
 
-## How To Run
-To run this, you need to first make sure all the above libraries are installed as some are not standard. This can be done via the following in your terminal
+## Usage
+To run this, you need to first make sure all the above libraries are installed as some are not standard. This can be done via the following in your terminal:
 ```bash
 pip install torch torchvision nibabel scikit-image matplotlib tqdm
 ```
-Then you must run train.py
+You should then set up the data. The data is assumed to be placed in the following structure:
+``` bash
+├── modules.py
+├── dataset.py 
+├── train.py
+├── predict.py 
+├── README.md
+├── outputs/
+└── HipMRI_Study_open/             #
+    └── keras_slices_data/         #
+        ├── keras_slices_test/     #
+        ├── keras_slices_validate/ #
+        └── keras_slices_train/    #
+
+```
+Where each keras_slices_* folder holds the respective .nii.gz files representing the 2d scans
+
+The following should be run in the terminal, within the folder the files themselves reside. Or  with the relative or absolute path from wherever you are, to the file
+
+You must then run train.py:
 ```bash
 python train.py
 ```
-This will train a model with a max of 50 epochs, stopping only when either 50 epochs is reached or the set target SSIM is reached. Which is currently set at 0.9. 
+This will train a model with a max of 50 epochs, stopping only when either 50
+ epochs is reached or the set target SSIM is reached. Which is currently set 
+ at 0.9. This file will make and save the model and some plots to a folder 
+ called checkpoints. the folder will hold the following:
+``` bash
+└── checkpoints/
+    ├── history.pth # Training history of train and validate loss and SSIM scores
+    ├── vqvae_best.pth # Version of model with best SSIM score. Checked after each epoch 
+    ├── vqvae_final.pth # Last version of model. Typically the same as vqvae_best as more training gave better SSIM, but these could differ at higher epochs 
+    └── training_plots.png # Plots of train and validate losses against epochs and SSIM scores against epochs
+```
+This file will also print to standard out the progression of the training in 
+epochs with information about its losses and SSIM scores. This output can be found in the outputs folder, in the file [train_output.txt](outputs/train_output.txt)
 
-And then the predict.py model
+Finally, predict.py is then run  :
+```bash
+python predict.py
+```
+This then creates a predict_output folder and saves example reconstruction
+ figures. In the format of the orignal next to the reconstruction.
+  With the SSIM score in the name of the file in the format `example_{i}_SSIM_{SSIM score}.png`
