@@ -26,7 +26,7 @@ This model learns a **discrete latent representation** of MRI structures, a code
 
 In this project, we use a VQ-VAE to reconstruct 2D Hip MRI scans as part of a [MRI-alone radiation therapy study](https://data.csiro.au/collection/csiro:51392v2?redirected=true).
 
-The goal was to reconstruct these images this and achieve an SSIM (Structual Similarity Index Measure) above 0.6. After testing, I decided to go with a model that aimed to achieve reconstructions with an SSIM above of 0.9 as the reconstructions at 0.6 were still rather blurry.
+The goal was to reconstruct these images and achieve an SSIM (Structual Similarity Index Measure) above 0.6. After testing, I decided to go with a model that aimed to achieve reconstructions with an SSIM above of 0.9 as the reconstructions at 0.6 were still rather blurry.
 
 ### Why do we want reconstruct these scans?
 By training a VQ-VAE to reconstruct these scans, we force the model to learn meaningful latent representations of the anatomy.
@@ -44,7 +44,7 @@ Once it has learned to accurately reconstruct these MRIs, we can sample from its
 
 In the context of this project title, we would use the generated images to form
 a basis of what is a healthy Hip MRI scan looks like, and use them as a reference point to
-identify prostate cancer in other real scans as part of a diagonistic tool.
+identify prostate cancer in other real scans as part of a diagnostic tool.
 
 This gives us a start to quantitatively identify prostate cancer from Hip MRI's.\
 That being said, the tool that does this should only ever be used by 
@@ -66,11 +66,8 @@ The implemented VQ-VAE follows three main components:
 2. **Vector Quantizer:** Maps continuous encoder outputs into discrete latent “codebook” entries.  
 3. **Decoder:** Reconstructs images from quantized embeddings.
 
-During training, the model minimizes:
-- **Reconstruction loss (MSE)**: ensures pixel-level accuracy.
-- **VQ loss:** ensures discrete latent codes stay close to encoder outputs.
-
-After training, the decoder can generate *new* MRI-like samples by sampling from the learned codebook — making this a **generative** model.
+After training, the decoder can generate *new* MRI-like samples by sampling
+from the learned codebook
 
 
 ### How it works - Model Architecture
@@ -106,14 +103,14 @@ $$
 $$
 
 3. We then find the index of the closest k vector
-4. Get the closet vector for each n\*h\*w m from the dictionary
+4. Get the closest vector for each n\*h\*w m from the dictionary
 5. Reshape back to n,h,w from n\*h\*w. z_q: (n, h, w, d)
 6. We then copy the gradients from z_q back to z_e so that we're able to pass
 some information back for training
 
 Ref: [VQVAE](https://huggingface.co/blog/ariG23498/understand-vq)
-## Advantages and disadvantages of VQ-VAE
 
+---
 
 ## File Structure
 ``` bash
@@ -129,7 +126,6 @@ Ref: [VQVAE](https://huggingface.co/blog/ariG23498/understand-vq)
     └── predict_output/
         └── ... # Folder with predict.py outputs. example reconstructions
 ```
-
 ---
 
 ## Pre-processing
@@ -141,7 +137,6 @@ Preprocessing includes:
 - Conversion to single-channel tensors
 
 These steps stabilize training and reduce sensitivity to MRI contrast differences across scans.
-
 
 ---
 
@@ -161,14 +156,34 @@ and in the context of what this work would be used for, detail in reconstruction
 ---
 
 ## Training
+
+Training parameters are as follows:
+| **Parameter**       | **Defined In**                | **Default Value** | **Description**                                                                                                                           |
+| ------------------------ | ----------------------------- | ----------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| `in_channels`| `Encoder`, `Decoder`, `VQVAE` | `1`| Number of input channels. For MRI slices, this is `1` (grayscale).                                                                        |
+| `hidden`| `Encoder`, `Decoder`| `128`| Number of feature maps in the hidden layers. |
+| `z_channels`| `Encoder`, `Decoder`, `VQVAE` | `64`| Dimensionality of the latent feature space.  |
+| `num_embeddings`| `VectorQuantizer`, `VQVAE`    | `512`| Size of the discrete codebook (number of possible embedding vectors).|
+| `embedding_dim` | `VectorQuantizer`| `64` | Dimension of each embedding vector in the codebook.  |
+| `commitment_cost`| `VectorQuantizer`| `0.25`| Weight controlling how strongly the encoder commits to using the nearest codebook entries.|
+| `kernel_size` / `stride` | Convolution layers | `(4, 2, 1)`| Define how much each convolution down- or up-samples the image during encoding and decoding. |
+| `activation`| Encoder/Decoder | `ReLU` | Non-linear activation used for feature extraction and reconstruction.  |
+
+Using these parameters on the very first run gave promising results which were then improved by increasing the target SSIM
+I never had to change these parameters
+
 With an initial target SSIM of 0.6, the model was able to reach that standard in
 approximately 1-2 epochs. The reconstructed image was still too blurry for my 
 standards of a reasonably clear reconstruction. The target SSIM was then
-increased to 0.9, of which it achieved it in approximately 10 epochs.
+increased to 0.7-8, of which it achieved it in approximately 2-3 epochs and
+it was still a little unclear so I set the target to 0.9, and it achieved that
+in approximately 10 epochs and produced much clearer images. These can be seen
+in the [next section](#results) 
 
-See [here](outputs\train_output.txt) and below
+See [here](outputs/train_output.txt) and below
 
-![Losses and SSIM against epochs](outputs\training_plots.png)\
+![Losses and SSIM against epochs](outputs/training_plots.png)
+
 **Figure 3: Losses and SSIM against epoch**
 
 We can see in the plots that the training and validation loss both decrease very
@@ -177,9 +192,11 @@ behind the training loss at any point, which is a good indicator that our model
 isn't overfitting.
 
 The SSIM plot shows similar results as both SSIM and loss are metrics for how
-close a generate image is to the target image. We can see more of a curve with the 
+close a generate image is to the target image. We can see more of a curve with
+the SSIM plot and can see it clearly plateauing at around 0.9. Meaning that 
 
 ---
+
 ## Results
 Below are six example reconstructions using a model that trained for 10 epochs that achieved an SSIM of 0.9007 durin its training
 
@@ -195,12 +212,32 @@ Reconstructions with SSIM of 0.901 (left) and 0.896 (right)
 ![Example 4](outputs/predict_output/example_4_SSIM_0.870280.png) ![Example 5](outputs/predict_output/example_5_SSIM_0.903866.png)\
 Reconstructions with SSIM of 0.870 (left) and 0.904 (right)
 
+All these reconstructions are on test data, completely independent to data used
+during training.
+
+We can see that these reconstructions are very similar to the originals, with a
+good level of detail accuracy and clarity. We can see that the model performs
+well across different types of Hip scans, ensuring our model wasn't biasedly
+trained on a certain type of scan 
 
 ---
-# Future Work and improvements
-split
-diagnostic
 
+## Limitation, improvements and Future Work
+
+### Limitations
+- Model trained on only 2d slices. information on slices from a 3d context wasn't captured
+- Whilst reconstructions were clear it still showed some blurring around very fine tissue details in very small regions.
+- Training requires large memory and compute resources for distance calculations which is the heart of the VQ-VAE
+
+### Improvements
+- Extend implementation to capture images in a 3d context using the segment data
+- Implement VQ-VAE-2, using hierarchical codebooks for even clearer and sharper reconstructions
+- Use more metrics for analysing how training is going other than loss and SSIM such as PSNR (Peak Signal-to-Noise Ratio) or even metrics around codebook usage, for identification of "dead" codes and looking at the utilization performance
+- Test different data splits. A split of 90-5-5 for train-test-validate was used as thats what the data came as and when trained, worked well. However further testing can be done to see how fast the model is able to train with various splits.
+
+### Future work
+- Using these reconstructions, research can be done with them to see if we're able to identify abnormal scans from normal scans and turn this problem into a class identification problem 
+- Future work would then include using models like these in diagnostic software to actively help identify "abnormal" Hip MRI's to identify prostate cancer.
 
 ---
 ## Dependencies
@@ -261,5 +298,5 @@ Finally, predict.py is then run  :
 python predict.py
 ```
 This then creates a predict_output folder and saves example reconstruction
- figures. In the format of the orignal next to the reconstruction.
+ figures. In the format of the original next to the reconstruction.
   With the SSIM score in the name of the file in the format `example_{i}_SSIM_{SSIM score}.png`
