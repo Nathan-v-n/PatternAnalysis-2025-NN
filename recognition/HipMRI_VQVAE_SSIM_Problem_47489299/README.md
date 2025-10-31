@@ -3,13 +3,16 @@
 ## Contents
 [Overview](#overview)\
 [Problem we are solving and why](#problem-we-are-solving-and-why)\
-[How It Works](#how-it-works)\
+[What is a VQVAE](#what-us-a-vqvae)\
 [File Structure](#file-structure)\
 [Pre-processing](#pre-processing)\
 [Data Splitting and Justification](#data-splitting-and-justification)\
+[Training](#training)\
 [Results](#results)\
+[Limitation, improvements and Future Work](#limitation-improvements-and-future-work)\
 [Dependencies](#dependencies)\
-[Usage](#usage)
+[Usage](#usage)\
+[References](#references)
 
 ---
 
@@ -18,7 +21,7 @@ This project implements a **Vector Quantized Variational Autoencoder (VQ-VAE)** 
 
 The goal is to create a model capable of reconstructing realistic MRI images, achieving a **Structural Similarity Index (SSIM)** greater than **0.6**, with “reasonably clear” reconstructed images.
 
-This model learns a **discrete latent representation** of MRI structures, a codebook of visual patterns, that can later be used for both **reconstruction** and **generation** of new realistic MRI-like images.
+This model learns a **discrete latent representation** of MRI structures, a codebook of visual patterns, that can later be used for **reconstruction** of realistic MRI images.
 
 ---
 
@@ -34,7 +37,7 @@ Those representations capture:
 - What typical tissue patterns look like
 - What variations are normal vs. abnormal
 
-Essentially, the model learns what a healthy or typical hip MRI looks like without explicit supervision.\
+Essentially, the model learns what a healthy or typical hip MRI looks like without explicit supervision.
 
 Once it has learned to accurately reconstruct these MRIs, we can sample from its latent space to generate new, realistic MRI-like images.
 
@@ -43,7 +46,7 @@ Once it has learned to accurately reconstruct these MRIs, we can sample from its
 - anonymize patient data by generating structurally realistic but non-identical scans.
 
 In the context of this project title, we would use the generated images to form
-a basis of what is a healthy Hip MRI scan looks like, and use them as a reference point to
+a basis of what a healthy Hip MRI scan looks like, and use them as a reference point to
 identify prostate cancer in other real scans as part of a diagnostic tool.
 
 This gives us a start to quantitatively identify prostate cancer from Hip MRI's.\
@@ -118,7 +121,6 @@ Ref: [VQVAE](https://huggingface.co/blog/ariG23498/understand-vq)
 ├── dataset.py # Data loader and preprocessing for MRI slices
 ├── train.py # Training, validation, plotting of metrics
 ├── predict.py # Reconstruction and SSIM evaluation
-├── HipMRI_VQ_VAE_Combined_Code.ipynb # All above files combined in a notebook for running in colab
 ├── README.md # Documentation (this file)
 └── outputs/
     ├── train_output.txt # Output of what train.py prints when it runs. Shows epoch training and losses
@@ -200,17 +202,20 @@ the SSIM plot and can see it clearly plateauing at around 0.9. Meaning that
 ## Results
 Below are six example reconstructions using a model that trained for 10 epochs that achieved an SSIM of 0.9007 durin its training
 
-![Example 0](outputs/predict_output/example_0_SSIM_0.892497.png) ![Example 1](outputs/predict_output/example_1_SSIM_0.911703.png)\
-Reconstructions with SSIM of 0.892 (left) and 0.912 (right)
+![Example 0](outputs/predict_output/example_0_SSIM_0.892497.png)\
+ ![Example 1](outputs/predict_output/example_1_SSIM_0.911703.png)\
+Reconstructions with SSIM of 0.892 (top) and 0.912 (bottom)
 
 
-![Example 2](outputs/predict_output/example_2_SSIM_0.900740.png) ![Example 3](outputs/predict_output/example_3_SSIM_0.895733.png)\
-Reconstructions with SSIM of 0.901 (left) and 0.896 (right)
+![Example 2](outputs/predict_output/example_2_SSIM_0.900740.png)\
+ ![Example 3](outputs/predict_output/example_3_SSIM_0.895733.png)\
+Reconstructions with SSIM of 0.901 (top) and 0.896 (bottom)
 
 
 
-![Example 4](outputs/predict_output/example_4_SSIM_0.870280.png) ![Example 5](outputs/predict_output/example_5_SSIM_0.903866.png)\
-Reconstructions with SSIM of 0.870 (left) and 0.904 (right)
+![Example 4](outputs/predict_output/example_4_SSIM_0.870280.png)\
+ ![Example 5](outputs/predict_output/example_5_SSIM_0.903866.png)\
+Reconstructions with SSIM of 0.870 (top) and 0.904 (bottom)
 
 All these reconstructions are on test data, completely independent to data used
 during training.
@@ -241,7 +246,7 @@ trained on a certain type of scan
 
 ---
 ## Dependencies
-| Library | Version (tested) | Purpose |
+| Library | Version | Purpose |
 |----------|------------------|----------|
 | `torch` | ≥2.0 | Deep learning framework |
 | `torchvision` | ≥0.15 | Image utilities |
@@ -273,7 +278,7 @@ You should then set up the data. The data is assumed to be placed in the followi
 ```
 Where each keras_slices_* folder holds the respective .nii.gz files representing the 2d scans
 
-The following should be run in the terminal, within the folder the files themselves reside. Or  with the relative or absolute path from wherever you are, to the file
+The following should be run in the terminal, within the folder the .py files themselves reside. Or  with the relative or absolute path from wherever you are, to the file
 
 You must then run train.py:
 ```bash
@@ -298,5 +303,14 @@ Finally, predict.py is then run  :
 python predict.py
 ```
 This then creates a predict_output folder and saves example reconstruction
- figures. In the format of the original next to the reconstruction.
+ figures made from test data. In the format of the original next to the reconstruction.
   With the SSIM score in the name of the file in the format `example_{i}_SSIM_{SSIM score}.png`
+``` bash
+└── predict_output/
+    └── example_{i}_SSIM_{SSIM score}.png
+```
+
+## References
+[MRI-alone radiation therapy study](https://data.csiro.au/collection/csiro:51392v2?redirected=true)\
+[Understanding Vector Quantization in VQ-VAE](https://huggingface.co/blog/ariG23498/understand-vq)\
+[Neural Discrete Representation Learning](https://arxiv.org/abs/1711.00937)
