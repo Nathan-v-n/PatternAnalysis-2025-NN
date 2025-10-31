@@ -2,6 +2,7 @@
 
 ## Contents
 [Overview](#overview)\
+[Problem we are solving and why](#problem-we-are-solving-and-why)\
 [How It Works](#how-it-works)\
 [File Structure](#file-structure)\
 [Pre-processing](#pre-processing)\
@@ -21,13 +22,13 @@ This model learns a **discrete latent representation** of MRI structures, a code
 
 ---
 
-## The problem
+## Problem we are solving and why
 
 In this project, we use a VQ-VAE to reconstruct 2D Hip MRI scans as part of a [MRI-alone radiation therapy study](https://data.csiro.au/collection/csiro:51392v2?redirected=true).
 
 The goal was to reconstruct these images this and achieve an SSIM (Structual Similarity Index Measure) above 0.6. After testing, I decided to go with a model that aimed to achieve reconstructions with an SSIM above of 0.9 as the reconstructions at 0.6 were still rather blurry.
 
-#### Why do we reconstruct these scans?
+### Why do we want reconstruct these scans?
 By training a VQ-VAE to reconstruct these scans, we force the model to learn meaningful latent representations of the anatomy.
 Those representations capture:
 - What typical tissue patterns look like
@@ -57,12 +58,9 @@ A VQ-VAE (Vector Quantized Variational Autoencoder) uses vector quantization to 
 
 Vector quantization (VQ) is a classical quantization technique from signal processing that allows the modeling of probability density functions
 
-
-Ref: [VQVAE](https://huggingface.co/blog/ariG23498/understand-vq)
-
 ---
 
-## How It Works
+### How It Works - High Level
 The implemented VQ-VAE follows three main components:
 
 1. **Encoder:** Compresses input MRI slices into a lower-dimensional latent representation.  
@@ -76,6 +74,47 @@ During training, the model minimizes:
 After training, the decoder can generate *new* MRI-like samples by sampling from the learned codebook — making this a **generative** model.
 
 ---
+
+### How it works - Model Architecture
+Below is a top level view of the model Architecture
+![VQVAE Arhchitecture](assests/VQVAE_Arch.png)
+[Figure 1: Top level VQ-VAE Architecture](https://shashank7-iitd.medium.com/understanding-vector-quantized-variational-autoencoders-vq-vae-323d710a888a)\
+Where:\
+n : batch size\
+h: image height\
+w: image width\
+c: number of channels in the input image (Describes how many values each pixel has in the input image. c = 1 grayscale, c = 3 rgb)\
+d: number of channels in the hidden state (what the model learns to represent. Compressed, feature-rich information)
+
+1. **Encoder:** First, the encoder takes in an image x: (n, h, w, c) and returns an z_e: (n, h, w, d) with the feature rich information per pixel
+2. **Vector Quantization Layer:** This then takes the output from the encoder, z_e, and selects embeddings from a dictionary based on distance and outputs z_q
+3. **Decoder:** Finally, the decoder takes z_q and outputs x', the reconstruction of x
+
+![alt text](assests/Vector_quant_layer.png)
+[Figure 2: Vector Quantization Layer](https://shashank7-iitd.medium.com/understanding-vector-quantized-variational-autoencoders-vq-vae-323d710a888a)
+
+The Vector Quantization Layer is the core of the model, as it maps encoder outputs to discrete latent codebook enteries
+1. The dimensions of the input z_e, not including d, are combined so that we 
+now have n\*h\*w vectors each of dimensionality d.
+2. Then each encoded feature vector (from the encoder) is replaced with the 
+closest entry from the learned embedding dictionary. To find the closest entry,
+the model does a calculation for finding the distances, k, between each of the
+n\*h\*w vectors and each codebook vector
+
+The distance computation between the encoded vectors and the codebook embeddings is done by using the the Mean Squared Error (MSE) loss. The MSE between two vectors is:
+
+$\frac{1}{N} \sum_{i=1}^N (z_i- z_{q_i})^2$
+
+3. We then find the index of the closest k vector
+4. Get the closet vector for each n\*h\*w m from the dictionary
+5. Reshape back to n,h,w from n\*h\*w. z_q: (n, h, w, d)
+6. We then copy the gradients from z_q back to z_e so that we're able to pass
+some information back for training
+
+
+#### 
+Ref: [VQVAE](https://huggingface.co/blog/ariG23498/understand-vq)
+
 
 ## File Structure
 ``` bash
@@ -194,3 +233,11 @@ python predict.py
 This then creates a predict_output folder and saves example reconstruction
  figures. In the format of the orignal next to the reconstruction.
   With the SSIM score in the name of the file in the format `example_{i}_SSIM_{SSIM score}.png`
+
+
+
+  Model archtechture
+  train loss plots and explanation
+  advantage diadvatage vqvae
+  alternative metrics
+  Future work
