@@ -58,7 +58,6 @@ A VQ-VAE (Vector Quantized Variational Autoencoder) uses vector quantization to 
 
 Vector quantization (VQ) is a classical quantization technique from signal processing that allows the modeling of probability density functions
 
----
 
 ### How It Works - High Level
 The implemented VQ-VAE follows three main components:
@@ -73,7 +72,6 @@ During training, the model minimizes:
 
 After training, the decoder can generate *new* MRI-like samples by sampling from the learned codebook — making this a **generative** model.
 
----
 
 ### How it works - Model Architecture
 Below is a top level view of the model Architecture
@@ -103,7 +101,9 @@ n\*h\*w vectors and each codebook vector
 
 The distance computation between the encoded vectors and the codebook embeddings is done by using the the Mean Squared Error (MSE) loss. The MSE between two vectors is:
 
-$\frac{1}{N} \sum_{i=1}^N (z_i- z_{q_i})^2$
+$$
+\frac{1}{N} \sum_{i=1}^N (z_i- z_{q_i})^2
+$$
 
 3. We then find the index of the closest k vector
 4. Get the closet vector for each n\*h\*w m from the dictionary
@@ -111,9 +111,8 @@ $\frac{1}{N} \sum_{i=1}^N (z_i- z_{q_i})^2$
 6. We then copy the gradients from z_q back to z_e so that we're able to pass
 some information back for training
 
-
-#### 
 Ref: [VQVAE](https://huggingface.co/blog/ariG23498/understand-vq)
+## Advantages and disadvantages of VQ-VAE
 
 
 ## File Structure
@@ -122,6 +121,7 @@ Ref: [VQVAE](https://huggingface.co/blog/ariG23498/understand-vq)
 ├── dataset.py # Data loader and preprocessing for MRI slices
 ├── train.py # Training, validation, plotting of metrics
 ├── predict.py # Reconstruction and SSIM evaluation
+├── HipMRI_VQ_VAE_Combined_Code.ipynb # All above files combined in a notebook for running in colab
 ├── README.md # Documentation (this file)
 └── outputs/
     ├── train_output.txt # Output of what train.py prints when it runs. Shows epoch training and losses
@@ -148,14 +148,38 @@ These steps stabilize training and reduce sensitivity to MRI contrast difference
 ## Data Splitting and Justification
 The dataset includes  `train`, `test` and `validate` folders\
 So, each folder is used for its repective purpose in training (`train` and `validate`) or testing (`test`)
+The splits are as follows with percentages of total:
 
-- **Training set:** `keras_slices_train`  
-- **Validation set:** `keras_slices_validate`  
-- **Testing set:** `keras_slices_test`
+- **Training set:** `keras_slices_train`   11460 slices - 90%
+- **Validation set:** `keras_slices_validate`  660 slices - 5%
+- **Testing set:** `keras_slices_test`  540 slices - 5%
 
+I stuck with these splits because not only were they already organised into the different splits,
+but I wanted to ensure the model had ample data to train on as MRI scans are quite detail oriented,
+and in the context of what this work would be used for, detail in reconstructions is of utmost importance
 
 ---
 
+## Training
+With an initial target SSIM of 0.6, the model was able to reach that standard in
+approximately 1-2 epochs. The reconstructed image was still too blurry for my 
+standards of a reasonably clear reconstruction. The target SSIM was then
+increased to 0.9, of which it achieved it in approximately 10 epochs.
+
+See [here](outputs\train_output.txt) and below
+
+![Losses and SSIM against epochs](outputs\training_plots.png)\
+**Figure 3: Losses and SSIM against epoch**
+
+We can see in the plots that the training and validation loss both decrease very
+fast in the first 1-2 epochs. We can see that the validation loss does not lag
+behind the training loss at any point, which is a good indicator that our model
+isn't overfitting.
+
+The SSIM plot shows similar results as both SSIM and loss are metrics for how
+close a generate image is to the target image. We can see more of a curve with the 
+
+---
 ## Results
 Below are six example reconstructions using a model that trained for 10 epochs that achieved an SSIM of 0.9007 durin its training
 
@@ -170,6 +194,12 @@ Reconstructions with SSIM of 0.901 (left) and 0.896 (right)
 
 ![Example 4](outputs/predict_output/example_4_SSIM_0.870280.png) ![Example 5](outputs/predict_output/example_5_SSIM_0.903866.png)\
 Reconstructions with SSIM of 0.870 (left) and 0.904 (right)
+
+
+---
+# Future Work and improvements
+split
+diagnostic
 
 
 ---
@@ -233,11 +263,3 @@ python predict.py
 This then creates a predict_output folder and saves example reconstruction
  figures. In the format of the orignal next to the reconstruction.
   With the SSIM score in the name of the file in the format `example_{i}_SSIM_{SSIM score}.png`
-
-
-
-  Model archtechture
-  train loss plots and explanation
-  advantage diadvatage vqvae
-  alternative metrics
-  Future work
